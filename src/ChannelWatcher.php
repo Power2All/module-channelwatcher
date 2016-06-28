@@ -16,7 +16,7 @@ class ChannelWatcher extends BaseModule
     public function setup()
     {
         // Register our command.
-        $this->getEventEmitter()->on('irc.data.in.names', [$this, 'namesInit']);
+        $this->getEventEmitter()->on('irc.data.in.353', [$this, 'namesInit']);
         $this->getEventEmitter()->on('irc.data.in.join', [$this, 'joinUser']);
         $this->getEventEmitter()->on('irc.data.in.part', [$this, 'partUser']);
         $this->getEventEmitter()->on('irc.data.in.quit', [$this, 'quitUser']);
@@ -29,7 +29,7 @@ class ChannelWatcher extends BaseModule
 
     public function namesInit(IrcDataObject $object)
     {
-
+        var_dump($object->getMessage());
     }
 
     public function joinUser(IrcDataObject $object)
