@@ -6,12 +6,12 @@ use WildPHP\CoreModules\Connection\IrcDataObject;
 
 class ChannelWatcher extends BaseModule
 {
-    protected $user;
-
     /**
      * @var array
      */
     protected $channelUsers;
+
+    protected $channelPrefixes;
 
     public function setup()
     {
@@ -21,67 +21,85 @@ class ChannelWatcher extends BaseModule
         $this->getEventEmitter()->on('irc.data.in.part', [$this, 'partUser']);
         $this->getEventEmitter()->on('irc.data.in.quit', [$this, 'quitUser']);
         $this->getEventEmitter()->on('irc.data.in.nick', [$this, 'nickUser']);
-        $this->getEventEmitter()->on('irc.data.in.mode', [$this, 'modeUser']);
 
         // Fix our channels list
         $this->channelUsers = array();
+
+        // Set the prefixes, these can be changed here, if needed
+        $this->channelPrefixes = array(
+            '~' => 'q',
+            '&' => 'a',
+            '@' => 'o',
+            '%' => 'h',
+            '+' => 'v'
+        );
     }
 
     public function namesInit(IrcDataObject $object)
     {
-        var_dump($object->getMessage());
+        // Getting the channel name this happens
+        $channel = str_replace('#', '', $object->getMessage()['params'][2]);
+        $users = trim($object->getMessage()['params']['tail']);
+
+        // Fix the users into a array
+        $usersArray = explode(' ', $users);
+
+        // Go through each user, add it to the array with the correct prefix
+        foreach ($usersArray as $keyUser => $valueUser) {
+            $valueUser = str_replace(array_keys($this->channelPrefixes), '', $valueUser);
+            $this->addUser($channel, $valueUser);
+        }
     }
 
     public function joinUser(IrcDataObject $object)
     {
-        $this->user = $object->getMessage()['nick'];
-        var_dump('Join user: ' . $this->user);
-        var_dump($object->getMessage());
+        $nick = $object->getMessage()['nick'];
+        $channel = str_replace('#', '', $object->getMessage()['params']['channels']);
+
+        $this->addUser($channel, $nick, null);
 
         return;
     }
 
     public function partUser(IrcDataObject $object)
     {
-        $this->user = $object->getMessage()['nick'];
-        var_dump('Part user: ' . $this->user);
-        var_dump($object->getMessage());
+        $nick = $object->getMessage()['nick'];
+        $channel = str_replace('#', '', $object->getMessage()['params']['channels']);
+
+        $this->removeUser($channel, $nick);
 
         return;
     }
 
     public function quitUser(IrcDataObject $object)
     {
-        $this->user = $object->getMessage()['nick'];
-        var_dump('Quit user: ' . $this->user);
-        var_dump($object->getMessage());
+        $nick = $object->getMessage()['nick'];
+        $channel = str_replace('#', '', $object->getMessage()['params']['channels']);
+
+        $this->removeUser($channel, $nick);
 
         return;
     }
 
     public function nickUser(IrcDataObject $object)
     {
-        $this->user = $object->getMessage()['nick'];
-        var_dump('Renamed user: ' . $this->user);
-        var_dump($object->getMessage());
+        $oldNick = $object->getMessage()['nick'];
+        $newNick = $object->getMessage()['params']['nickname'];
+
+        // Since the nickname change doesn't give a channel, we make sure it's changed everywhere
+        foreach($this->getChannelsAndUsers() as $key => $value) {
+            if (isset($value[$oldNick])) {
+                $this->removeUser($key, $oldNick);
+                $this->addUser($key, $newNick, null);
+            }
+        }
 
         return;
     }
 
-    public function modeUser(IrcDataObject $object)
+    public function addUser($channel, $nickname)
     {
-        $this->user = $object->getMessage()['nick'];
-        var_dump('Mode change user: ' . $this->user);
-        var_dump($object->getMessage());
-
-        return;
-    }
-
-    public function setUser($channel, $nickname, $prefix)
-    {
-        $this->channelUsers[$channel][$nickname] = array(
-            'prefix' => $prefix
-        );
+        $this->channelUsers[$channel][$nickname] = true;
 
         return true;
     }
@@ -112,6 +130,11 @@ class ChannelWatcher extends BaseModule
         }
 
         return false;
+    }
+
+    public function getChannelsAndUsers()
+    {
+        return $this->channelUsers;
     }
 
     public function setChannel($channel)
