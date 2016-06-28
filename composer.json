@@ -1,0 +1,13 @@
+{
+    "name": "power2all/module-channelwatcher",
+    "description": "A module for WildPHP's IRC bot, keeps a watchers list of all users and their modes",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Power2All",
+            "email": "info@power2all.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {}
+}
