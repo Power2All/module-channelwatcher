@@ -1,6 +1,7 @@
 {
     "name": "power2all/module-channelwatcher",
     "description": "A module for WildPHP's IRC bot, keeps a watchers list of all users and their modes",
+	"license": "GPL-3.0",
     "type": "library",
     "authors": [
         {
@@ -8,6 +9,14 @@
             "email": "info@power2all.com"
         }
     ],
+    "autoload": {
+        "psr-4": {
+            "Power2All\\Modules\\ChannelWatcher\\": "src"
+        }
+    },
     "minimum-stability": "dev",
-    "require": {}
+    "require": {
+		"wildphp/wild-irc-bot": "^2.0",
+		"wildphp/api": "^1.0"
+	}
 }
