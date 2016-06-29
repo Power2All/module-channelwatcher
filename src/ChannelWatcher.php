@@ -121,7 +121,7 @@ class ChannelWatcher extends BaseModule
         $nick = $object->getMessage()['nick'];
 
         // User disconnected, we make sure it's removed in all arrays
-        foreach($this->getChannelsAndUsers() as $key => $value) {
+        foreach ($this->getChannelsAndUsers() as $key => $value) {
             if (isset($value[$nick])) {
                 $this->removeUser($key, $nick);
             }
@@ -139,7 +139,7 @@ class ChannelWatcher extends BaseModule
         $newNick = $object->getMessage()['params']['nickname'];
 
         // Since the nickname change doesn't give a channel, we make sure it's changed everywhere
-        foreach($this->getChannelsAndUsers() as $key => $value) {
+        foreach ($this->getChannelsAndUsers() as $key => $value) {
             if (isset($value[$oldNick])) {
                 $this->removeUser($key, $oldNick);
                 $this->addUser($key, $newNick);
