@@ -11,6 +11,11 @@ use WildPHP\CoreModules\Connection\IrcDataObject;
 class ChannelWatcher extends BaseModule
 {
     /**
+     * @var $connection
+     */
+    protected $connection;
+
+    /**
      * @var array
      */
     protected $channelUsers;
@@ -29,6 +34,11 @@ class ChannelWatcher extends BaseModule
         $this->getEventEmitter()->on('irc.data.in.quit', [$this, 'quitUser']);
         $this->getEventEmitter()->on('irc.data.in.nick', [$this, 'nickUser']);
 
+        $this->getEventEmitter()->on('irc.command.users', [$this, 'usersList']);
+
+        // Needed connectors
+        $this->connection = $this->getModule('Connection');
+
         // Fix our channels list
         $this->channelUsers = array();
 
@@ -42,6 +52,20 @@ class ChannelWatcher extends BaseModule
         );
     }
 
+    public function usersList($command, $params, IrcDataObject $data)
+    {
+        $this->command = $command;
+        $this->params = $params;
+        $this->data = $data;
+        $channel = str_replace('#', '', $data->getMessage()['params']['receivers']);
+
+        $this->user = $data->getMessage()['nick'];
+
+        $message = 'There are ' . count(array_keys($this->getUsers($channel))) . ' users in this channel';
+
+        $this->connection->write($this->connection->getGenerator()->ircNotice($this->user, $message));
+    }
+
     /**
      * @param IrcDataObject $object
      */
@@ -53,6 +77,8 @@ class ChannelWatcher extends BaseModule
 
         // Fix the users into a array
         $usersArray = explode(' ', $users);
+
+        //
 
         // Go through each user, add it to the array with the correct prefix
         foreach ($usersArray as $keyUser => $valueUser) {
@@ -93,9 +119,13 @@ class ChannelWatcher extends BaseModule
     public function quitUser(IrcDataObject $object)
     {
         $nick = $object->getMessage()['nick'];
-        $channel = str_replace('#', '', $object->getMessage()['params']['channels']);
 
-        $this->removeUser($channel, $nick);
+        // User disconnected, we make sure it's removed in all arrays
+        foreach($this->getChannelsAndUsers() as $key => $value) {
+            if (isset($value[$nick])) {
+                $this->removeUser($key, $nick);
+            }
+        }
 
         return;
     }
