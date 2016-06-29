@@ -4,6 +4,10 @@ namespace Power2All\Modules\ChannelWatcher;
 use WildPHP\BaseModule;
 use WildPHP\CoreModules\Connection\IrcDataObject;
 
+/**
+ * Class ChannelWatcher
+ * @package Power2All\Modules\ChannelWatcher
+ */
 class ChannelWatcher extends BaseModule
 {
     /**
@@ -11,6 +15,9 @@ class ChannelWatcher extends BaseModule
      */
     protected $channelUsers;
 
+    /**
+     * @var array
+     */
     protected $channelPrefixes;
 
     public function setup()
@@ -35,6 +42,9 @@ class ChannelWatcher extends BaseModule
         );
     }
 
+    /**
+     * @param IrcDataObject $object
+     */
     public function namesInit(IrcDataObject $object)
     {
         // Getting the channel name this happens
@@ -51,16 +61,22 @@ class ChannelWatcher extends BaseModule
         }
     }
 
+    /**
+     * @param IrcDataObject $object
+     */
     public function joinUser(IrcDataObject $object)
     {
         $nick = $object->getMessage()['nick'];
         $channel = str_replace('#', '', $object->getMessage()['params']['channels']);
 
-        $this->addUser($channel, $nick, null);
+        $this->addUser($channel, $nick);
 
         return;
     }
 
+    /**
+     * @param IrcDataObject $object
+     */
     public function partUser(IrcDataObject $object)
     {
         $nick = $object->getMessage()['nick'];
@@ -71,6 +87,9 @@ class ChannelWatcher extends BaseModule
         return;
     }
 
+    /**
+     * @param IrcDataObject $object
+     */
     public function quitUser(IrcDataObject $object)
     {
         $nick = $object->getMessage()['nick'];
@@ -81,6 +100,9 @@ class ChannelWatcher extends BaseModule
         return;
     }
 
+    /**
+     * @param IrcDataObject $object
+     */
     public function nickUser(IrcDataObject $object)
     {
         $oldNick = $object->getMessage()['nick'];
@@ -90,13 +112,18 @@ class ChannelWatcher extends BaseModule
         foreach($this->getChannelsAndUsers() as $key => $value) {
             if (isset($value[$oldNick])) {
                 $this->removeUser($key, $oldNick);
-                $this->addUser($key, $newNick, null);
+                $this->addUser($key, $newNick);
             }
         }
 
         return;
     }
 
+    /**
+     * @param $channel
+     * @param $nickname
+     * @return bool
+     */
     public function addUser($channel, $nickname)
     {
         $this->channelUsers[$channel][$nickname] = true;
@@ -104,6 +131,11 @@ class ChannelWatcher extends BaseModule
         return true;
     }
 
+    /**
+     * @param $channel
+     * @param $nickname
+     * @return bool
+     */
     public function getUser($channel, $nickname)
     {
         if (isset($this->channelUsers[$channel][$nickname])) {
@@ -113,6 +145,11 @@ class ChannelWatcher extends BaseModule
         return false;
     }
 
+    /**
+     * @param $channel
+     * @param $nickname
+     * @return bool
+     */
     public function removeUser($channel, $nickname)
     {
         if (isset($this->channelUsers[$channel][$nickname])) {
@@ -123,6 +160,10 @@ class ChannelWatcher extends BaseModule
         return false;
     }
 
+    /**
+     * @param $channel
+     * @return bool|mixed
+     */
     public function getUsers($channel)
     {
         if (isset($this->channelUsers[$channel])) {
@@ -132,18 +173,33 @@ class ChannelWatcher extends BaseModule
         return false;
     }
 
+    /**
+     * @return array
+     */
     public function getChannelsAndUsers()
     {
         return $this->channelUsers;
     }
 
+    /**
+     * @param $channel
+     * @return bool
+     */
     public function setChannel($channel)
     {
-        $this->channelUsers[$channel] = array();
+        if (false === isset($this->channelUsers[$channel])) {
+            $this->channelUsers[$channel] = array();
 
-        return true;
+            return true;
+        }
+
+        return false;
     }
 
+    /**
+     * @param $channel
+     * @return bool
+     */
     public function removeChannel($channel) {
         if (isset($this->channelUsers[$channel])) {
             unset($this->channelUsers[$channel]);
